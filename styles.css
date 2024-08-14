@@ -1,0 +1,45 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: #000;
+    color: #fff;
+    font-size: 24px;
+    font-family: monospace;
+}
+
+#game {
+    height: 100%;
+    
+}
+
+#grid {
+    display: grid;
+    grid-template-columns: repeat(13, auto);
+
+}
+
+#game, .cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cell {
+    /* width: 50px;
+    height: 50px; */
+    outline: 1px solid;
+}
+
+.cell:hover {
+    background-color: #fff;
+    color: #000;
+    cursor: pointer;
+}
