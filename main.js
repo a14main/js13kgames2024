@@ -1,34 +1,359 @@
 window.addEventListener("DOMContentLoaded", loadGame);
 window.addEventListener("resize", onResize);
-window.addEventListener("keydown", onKeyDown);
 onResize();
 
+const colors = ["#6df7c1", "#11adc1", "#606c81", "#393457", "#1e8875", "#5bb361", "#a1e55a", "#f7e476", "#f99252", "#cb4d68", "#6a3771", "#c92464", "#f48cb6", "#f7b69e", "#9b9c82"
+]
+
+const DIRECTIONS = [[0,0], [-1,0], [1,0], [0,-1], [0,1]];
+
+
 function loadGame() {
-    const displayGrid = [];
+    createGrid();
+    window.level = 1;
+    window.room = 1;
+    window.moves = 0;
+    createPlayer();
+    setupGame();
+    
+}
+
+function setupGame() {
+
+    gameOverBar.style.transform = "scaleY(0)";
+    window.mobs = [];
+    createMap();
+    player.x = 6;
+    player.y = 12;
+    render();
+    window.addEventListener("keydown", onKeyDown);
+
+}
+
+function createPlayer() {
+    window["player"] = {
+        x: 6,
+        y: 12,
+        score: 0
+    }
+    window.playerElement = playerElement;
+}
+
+function createMap() {
+    window.gameMap = [];
     for (let i = 0; i < 13; i++) {
-        const row = [];
+        gameMap[i] = [];
         for (let j = 0; j < 13; j++) {
+            gameMap[i][j] = 0;
+        }
+    }
+    const tiles = [1];
+    // const tiles = [1,1,1,1,1,1,1,1,1,1,1,1,1];
+    for (let i = 1; i <= 13; i++) {
+        for (let j = -level + i - 1; j <= level - i + 1; j++) {
+            tiles.push(Math.max(-room + 1, Math.min(j, 13)));
+        }
+    }
+    if (tiles.length > (13 * 13) - 2) {
+        tiles.splice(0, tiles.length - (13 * 13) - 2);
+    }
+    // tiles.sort(() => Math.random - 0.5);
+    for (let i = 0; i < tiles.length; i++) {
+        let x = Math.floor(Math.random() * 13);
+        let y = Math.floor(Math.random() * 13);
+        while (gameMap[x][y] !== 0 && x !== 6 && y !== 12 && y !== 0) {
+            x = Math.floor(Math.random() * 13);
+            y = Math.floor(Math.random() * 13);
+        }
+        gameMap[x][y] = tiles[i];
+    }
+    gameMap[6][12] = 0;
+    gameMap[6][0] = -100;
+    spawnMobs();
+}
+
+function spawnMobs() {
+    const x = Math.floor(Math.random() * 11) + 1;
+    const y = Math.floor(Math.random() * 6) + 1;
+    const score = Math.floor(Math.random() * 12 + 1);
+    gameMap[x][y] = 0;
+    element = document.createElement("div");
+    element.classList.add('mob');
+    mobs.push({x, y, score, element});
+}
+
+function render() {
+    for (let y = 0; y < 13; y++) {
+        for (let x = 0; x < 13; x++) {
+            const element = window["x" + x + "y" + y];
+            const num = gameMap[x][y];
+            // element.classList.remove("player", "door");
+            element.textContent = num ? num : "";
+            if (x === 6 && y === 0) {
+                element.textContent = room === 13 ? level === 13 ? "✹" : "↥" : "∏";
+                element.style.color = "#ffa";
+                element.style.backgroundColor = "#ffa2";
+                element.classList.add("door");
+                continue
+
+            }
+            if (num === -99) {
+                element.textContent = "X";
+                element.style.color = "#404040";
+            }
+            
+            element.style.color = num <= 0 ? colors[-num] : "#000";
+            element.style.outlineColor = num <= 0 ? colors[-num] : colors[num];
+            element.style.backgroundColor = num <= 0 ? "#000" : colors[num] + "80";
+        }
+    }
+    const playerCell = window["x" + player.x + "y" + player.y];
+    playerElement.remove();
+    playerCell.appendChild(playerElement);
+    playerElement.textContent = player.score;
+    playerElement.style.color = "#000";
+
+    mobs.forEach((mob) => {
+        const mobCell = window["x" + mob.x + "y" + mob.y];
+        mob.element.remove();
+        mobCell.appendChild(mob.element);
+        mob.element.textContent = mob.score;
+        mob.element.style.color = mob.score > player.score ? "#f00" : mob.score < player.score ? "#0f0" : "#444";
+    });
+
+    levelText.textContent = `${level}:${room}`;  
+    levelText.style.color = colors[level];
+}
+
+function createGrid() {
+    for (let y = 0; y < 13; y++) {
+        for (let x = 0; x < 13; x++) {
             const cell = document.createElement("div");
             cell.className = "cell";
-            cell.textContent = "" + Math.floor(Math.random() * 52 - 26);
+            cell.id = "x" + x + "y" + y
+            cell.textContent = "";
             grid.appendChild(cell);
-            row[j] = cell;
         }
-        displayGrid[i] = row;
     }
 }
 
 function onResize() {
-    const size = Math.min(innerHeight, innerWidth) / 14;
+    const size = Math.min(innerHeight, innerWidth) / 16;
     grid.style.gridTemplateColumns = `repeat(13,${size}px)`;
     grid.style.gridTemplateRows = `repeat(13,${size}px)`;
     grid.style.fontSize = `${size * 0.4}px`;
 }
 
-function onKeyDown(event) {
-    if (event.key === " ") {
+function handleInput(dx, dy, wait) {
+    player.x += dx;
+    if (player.x < 0) {player.x = 0; return}
+    if (player.x > 12) {player.x = 12; return}
+    player.y += dy;
+    if (player.y < 0) {player.y = 0; return}
+    if (player.y > 12) {player.y = 12; return}
 
+    if (gameMap[player.x][player.y] === -99) {
+        player.x -= dx;
+        player.y -= dy;
+        return
     }
+
+    let mob;
+    mobs.forEach((m)=> {
+        if (m.x === player.x && m.y === player.y) mob = m;
+    })
+    
+    if (mob) {
+        tryBump(mob);
+        player.x -= dx;
+        player.y -= dy;
+    }
+
+    moves++;
+
+    if (player.x === 6 && player.y === 0) {
+        nextRoom();
+        return
+    }
+    if (gameMap[player.x][player.y] && !mob) {
+        player.score += gameMap[player.x][player.y];
+        playerElement.style.transform = gameMap[player.x][player.y] > 0 ? "scale(1)" : "scale(0.72)";
+        gameMap[player.x][player.y] = 0;
+        setTimeout(() => playerElement.style.transform = "scale(0.8)", 100);
+    }
+    
+    
+
+    if (player.score < 0 || player.score >= 13) {
+        gameOver();
+    }
+
+    updateMobs();
+    updateMap();
+
+    render();
+}
+
+function updateMobs() {
+    mobs.forEach((mob) => {
+        if (mob.dead) return
+        let direction = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+        let tx = mob.x + direction[0];
+        let ty = mob.y + direction[1];
+        if (tx > 12 || tx < 0) {
+            return
+        }
+        if (ty > 12 || ty < 0) {
+            return
+        }
+        if ((tx === 6 && ty === 0) || gameMap[tx][ty] < -13) {
+            return
+        }
+        if (player.x === tx && player.y === ty) {
+            tryBump(mob);
+        } else {
+            [mob.x, mob.y] = [tx, ty];
+            const diff = 13 - mob.score;
+            mob.score += Math.max(-1, Math.min(diff, gameMap[tx][ty]));
+            gameMap[tx][ty] = 0;
+        }
+        
+        if (mob.score < 0) {
+            mob.dead = true;
+            mob.element.remove();
+            mob.element.style.display = "none";
+        }
+    });
+}
+
+function tryBump(mob) {
+    if (!mob) return
+    if (mob.score > player.score) {
+        player.score--;
+    }
+    if (player.score > mob.score) {
+        mob.score--;
+    }
+}
+
+function updateMap() {
+    gameMap[6][0] = -100;
+    for (let y = 0; y < 13; y++) {
+        for (let x = 0; x < 13; x++) {
+            if (x === 6 && y === 0) continue
+            if (x === player.x && y === player.y) continue
+            let mob = false;
+            for (let i = 0; i < mobs.length; i++) {
+                if (mobs[i].x === x && mobs[i].y === y) {
+                    mob = true;
+                }
+            }
+            if (mob) continue;
+            const value = gameMap[x][y];
+            if (value >= 13 || value <= -13) {
+                getNeighbours(x,y).forEach(([xx, yy]) => {
+                    if (gameMap[xx]?.[yy] === undefined || Math.random() >= 0.13) return
+                    if (xx === player.x && yy === player.y) return
+                    gameMap[xx][yy] = value;
+                });
+                gameMap[x][y] = Math.random() < 0.13 ? -99 : 0;
+            }
+            if (Math.random() < 0.13 && gameMap[x][y] > -99) {
+                gameMap[x][y]+= averageSignOfNeighbours(x,y);
+            }
+        }
+    }
+}
+
+function getNeighbours(x, y) {
+    return [[-1,0],[1,0],[0,-1],[-0,1]].map(([i, j]) => [x+i,y+j]);
+}
+
+function averageSignOfNeighbours(x, y) {
+    let sum = 0;
+    let count = 0;
+    for ([i, j] of [[-1,0],[1,0],[0,-1],[-0,1]]) {
+        if (x+i === 6 && y+j === 0) continue
+        if (gameMap[x + i]?.[y + j]) {
+            sum += gameMap[x+i][y+j];
+            count++;
+        }
+    }
+    sum /= count;
+    return sum? sum / Math.abs(sum) : 0;
+}
+
+function nextRoom() {
+    if (room === 13) {
+        return nextLevel();  
+    }
+    room++;
+    setupGame();
+}
+
+function nextLevel() {
+    if (level === 13) {
+        winGame();
+        return
+    }
+    room = 1;
+    level++;
+    setupGame();
+}
+
+function winGame() {
+    gameOverText.textContent = "WIN! WIN! WIN!"
+    gameOverBar.style.transform = "scaleY(1)";
+    window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onMenuKeyDown);
+}
+
+function gameOver() {
+    gameOverText.textContent = "GAME OVER"
+    gameOverBar.style.transform = "scaleY(1)";
+    window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onMenuKeyDown);
+}  
+
+function onMenuKeyDown(event) {
+    if (event.key === " ") {
+        restart();
+        event.preventDefault();
+    }
+}
+
+function restart() {
+        window.removeEventListener("keydown", onMenuKeyDown);
+        createPlayer();
+        room = 1;
+        level = 1;
+        moves = 0;
+        setupGame();
+    
+    
+
+}
+
+function onKeyDown(event) {
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
+        const {key, code} = event;
+        const dy = (key === "ArrowDown") - (key === "ArrowUp");
+        const dx = (key === "ArrowRight") - (key === "ArrowLeft");
+        const wait = (key === " ");
+        handleInput(dx, dy, wait);       
+        event.preventDefault();
+    }
+}
+
+function showMessage(str) {
+    const message = document.createElement("li");
+    message.classList.add("message");
+    message.textContent = str;
+    messages.insertBefore(message, messages.firstChild);
+}
+
+for (let i = 0; i < 10; i++) {
+    showMessage("a much much much much much longer test message " + i);
 }
 
 

@@ -1,7 +1,7 @@
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    /* box-sizing: border-box; */
 }
 
 html, body {
@@ -9,37 +9,97 @@ html, body {
 }
 
 body {
-    background-color: #000;
+    background-color: #1b1b1b;
     color: #fff;
     font-size: 24px;
     font-family: monospace;
 }
 
-#game {
-    height: 100%;
-    
+h1, h2 {
+    font-size: calc(100vmin / 24);
+}
+
+
+#headerText, #messages {
+    width: calc(13 / 16 * 100vmin);
+    display: flex;
+    justify-content: space-between;
 }
 
 #grid {
+    text-shadow: 0 0 10px;
     display: grid;
     grid-template-columns: repeat(13, auto);
-
+    border: 2px solid #fff;
+    /* gap: 1px; */
+    padding: 2px;
 }
 
-#game, .cell {
+#game, .cell, #gameOverText, #playerElement, #gameOverBar, .mob {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
 }
 
-.cell {
-    /* width: 50px;
-    height: 50px; */
-    outline: 1px solid;
+#game {
+    height: 100%;
+    justify-content: flex-start;
 }
 
-.cell:hover {
+.cell {
+    outline: 1px dashed;
+    box-shadow: inset 0 0 10px #6df7c1;
+}
+
+.door {
+    background-color: #4b4545;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.5em;
+}
+
+#playerElement, .mob {
     background-color: #fff;
-    color: #000;
+    font-weight: bold;
+    /* outline: 2px solid; */
+    border-radius: 10px;
+    width: 100%;
+    height: 100%;
+    font-size: 3vmin;
+    transform: scale(0.8);
+    transition: .3s;
+}
+
+#gameOverBar {
+    position: absolute;
+    background-color: #000a;
+    padding: 20vmin;
+    border: 2px solid #fffa;
+    box-shadow: 0 0 16px #000;
+    transform: scaleY(0);
+    transition: transform .3s;
+    gap: calc(100vmin / 24);
+}
+
+#restartButton {
+    transition: .3s;
+    color: #ccc;
+}
+
+#restartButton:hover {
+    transform: scale(1.2);
     cursor: pointer;
+    color: #fff;
+}
+
+#messages {
+    overflow: scroll;
+    padding: 8px;
+    color: #aaa;
+    flex-direction: column;
+}
+
+#messages li:first-child {
+    color: #fff;
 }
