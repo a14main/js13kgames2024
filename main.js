@@ -164,6 +164,7 @@ function onResize() {
 }
 
 function handleInput(dx, dy, wait) {
+    if (wait) return
     player.x += dx;
     if (player.x < 0) { player.x = 0; return }
     if (player.x > 12) { player.x = 12; return }
@@ -367,7 +368,7 @@ function gameOver(str) {
 
     showMessage(str + " on level " + level + ".");
     gameOverBar.style.transform = "scaleY(1)";
-    gameOverMessage.textContent = str;
+    gameOverMessage.textContent = str + " on level " + level + ".";
     window.removeEventListener("keydown", onKeyDown);
     window.addEventListener("keydown", onMenuKeyDown);
 }
