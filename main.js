@@ -1,6 +1,11 @@
 window.addEventListener("DOMContentLoaded", loadGame);
 window.addEventListener("resize", onResize);
+
 onResize();
+
+let mobs = [];
+let mouseOver;
+
 
 const colors = ["#6df7c1", "#11adc1", "#606c81", "#393457", "#1e8875", "#5bb361", "#a1e55a", "#f7e476", "#f99252", "#cb4d68", "#6a3771", "#c92464", "#f48cb6", "#f7b69e", "#9b9c82"
 ]
@@ -11,6 +16,8 @@ window.gameRunning = false;
 
 function loadGame() {
     createGrid();
+    mouseOver = document.getElementById("mouseOver");
+    grid.addEventListener("mouseover", onMouseOverGrid);
     window.level = 1;
     window.room = 1;
     window.moves = 0;
@@ -23,7 +30,7 @@ function loadGame() {
 function setupGame() {
 
     gameOverBar.style.transform = "scaleY(0)";
-    window.mobs = [];
+    mobs = [];
     createMap();
     player.x = 6;
     player.y = 12;
@@ -58,6 +65,7 @@ function spawnMob(minLevel=1, maxLevel=level) {
     gameMap[x][y] = 0;
     element = document.createElement("div");
     element.classList.add('mob');
+    element.id = `mob${mobs.length}`;
     mobs.push({ x, y, score, element, attack, defense, speed, name});
 }
 
@@ -145,12 +153,14 @@ function render() {
         mob.element.remove();
         mobCell.appendChild(mob.element);
         mob.element.textContent = mob.score;
-        mob.element.style.color = mob.score > player.score ? "#f00" : mob.score < player.score ? "#0f0" : "#444";
+        mob.element.style.color = mob.score > player.score ? "#800" : mob.score < player.score ? "#080" : "#444";
     });
 
     movesText.textContent = `Moves: ${moves}`;
     levelText.textContent = `${level}:${room}`;
     levelText.style.color = colors[level];
+    playerStats.textContent = `ATT:${player.attack + player.score} DEF:${player.defense + player.score}`;
+    youName.textContent = `You(${player.score}): `
 }
 
 function createGrid() {
@@ -393,7 +403,8 @@ function restart() {
 
 }
 
-function onKeyDown({key}) {
+function onKeyDown(event) {
+    const {key} = event;
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) {
         const dy = (key === "ArrowDown") - (key === "ArrowUp");
         const dx = (key === "ArrowRight") - (key === "ArrowLeft");
@@ -403,12 +414,33 @@ function onKeyDown({key}) {
     }
 }
 
+function onMouseOverGrid(event) {
+    const {target} = event;
+    if ([...target.classList].includes("mob")) {
+        const mob = mobs.find((m) => m.element === target);
+        if (mob) {
+            monsterName.textContent = mob.name[0].toUpperCase() + mob.name.substring(1) + `(${mob.score})`;
+            monsterStats.textContent = `ATT:${mob.attack + mob.score} DEF:${mob.defense + mob.score}`;
+        }
+        return true;
+    }
+    monsterName.textContent = "";
+    monsterStats.textContent = "";
+       
+}
+
+function showText(str, target) {
+    mouseOver.textContent = str;
+    mouseOver.style.display = str ? "block" : "none";
+    target?.appendChild(mouseOver);
+}
+
 function showMessage(str) {
     const message = document.createElement("li");
     message.classList.add("message");
     message.textContent = str[0].toUpperCase() + str.substring(1);
     messages.insertBefore(message, messages.firstChild);
-    message.scrollIntoView();
+    messages.scrollTop = 0;
 }
 
 
