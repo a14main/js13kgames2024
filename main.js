@@ -17,7 +17,7 @@ function loadGame() {
     window.movesInRoom = 0;
     createPlayer();
     setupGame();
-
+    showMessage("Avoid the Number 13 and don't go below 0.");
 }
 
 function setupGame() {
@@ -37,9 +37,28 @@ function createPlayer() {
     window["player"] = {
         x: 6,
         y: 12,
-        score: 0
+        score: 0,
+        attack: 0,
+        defense: 0,
+        speed: 1,
+        element: playerElement,
+        name: "you",
     }
     window.playerElement = playerElement;
+}
+
+function spawnMob(minLevel=1, maxLevel=level) {
+    const x = Math.floor(Math.random() * 11) + 1;
+    const y = Math.floor(Math.random() * 6) + 1;
+    const score = Math.floor(Math.random() * (maxLevel - minLevel)) + minLevel;
+    const attack = 0;
+    const defense = 0;
+    const speed = 1;
+    const name = "a monster"
+    gameMap[x][y] = 0;
+    element = document.createElement("div");
+    element.classList.add('mob');
+    mobs.push({ x, y, score, element, attack, defense, speed, name});
 }
 
 function createMap() {
@@ -88,16 +107,6 @@ function spawnMobs() {
     for (let i = 0; i < quantity; i++) {
         spawnMob(minLevel, maxLevel);
     }
-}
-
-function spawnMob(minLevel=1, maxLevel=level) {
-    const x = Math.floor(Math.random() * 11) + 1;
-    const y = Math.floor(Math.random() * 6) + 1;
-    const score = Math.floor(Math.random() * (maxLevel - minLevel)) + minLevel;
-    gameMap[x][y] = 0;
-    element = document.createElement("div");
-    element.classList.add('mob');
-    mobs.push({ x, y, score, element });
 }
 
 function render() {
@@ -184,7 +193,7 @@ function handleInput(dx, dy, wait) {
     })
 
     if (mob) {
-        if (tryBump(mob)) {
+        if (tryBump(player, mob)) {
             player.x -= dx;
             player.y -= dy;
         }
@@ -238,7 +247,7 @@ function updateMobs() {
             return
         }
         if (player.x === tx && player.y === ty) {
-            tryBump(mob);
+            tryBump(mob, player);
         } else {
             [mob.x, mob.y] = [tx, ty];
             const diff = 13 - mob.score;
@@ -247,7 +256,7 @@ function updateMobs() {
         }
 
         if (mob.score < 0) {
-            showMessage(`You defeated a number.`);
+            showMessage(`You defeated ${mob.name}.`);
             mob.dead = true;
             mob.element.remove();
             mob.element.style.display = "none";
@@ -255,31 +264,23 @@ function updateMobs() {
     });
 }
 
-function tryBump(mob) {
-    if (!mob || mob.dead) return false
-    if (mob.score > player.score) {
-        player.score--;
-        showMessage(`The number ${mob.score} hit you.`);
+function tryBump(attacker, defender) {
+    if (!attacker || !defender || defender.dead || attacker.dead) return false
+    if (attacker.score + attacker.attack > defender.score + defender.defense) {
+        defender.score--;
+        showMessage(`${attacker.name} hit ${defender.name}.`);
 
         if (player.score < 0) {
             gameOver(`You were killed by the number ${mob.score}`);
         }
-        playerElement.style.transform = "scale(0.5)";
-        playerElement.style.backgroundColor = "#f00";
+        defender.element.style.transform = "scale(0.5)";
+        defender.element.style.backgroundColor = "#f00";
         setTimeout(() => {
-            playerElement.style.transform = "scale(0.8)";
-            playerElement.style.backgroundColor = "#fff";
+            defender.element.style.transform = "scale(0.8)";
+            defender.element.style.backgroundColor = "#fff";
         }, 50);
-    }
-    if (player.score > mob.score) {
-        mob.score--;
-        showMessage(`You hit the number ${mob.score}.`);
-        mob.element.style.transform = "scale(0.5)";
-        mob.element.style.backgroundColor = "#f00";
-        setTimeout(() => {
-            mob.element.style.transform = "scale(0.8)";
-            mob.element.style.backgroundColor = "#fff";
-        }, 50);
+    } else {
+        showMessage(`${attacker.name} missed ${defender.name}.`);
     }
     return true
 }
@@ -392,9 +393,8 @@ function restart() {
 
 }
 
-function onKeyDown(event) {
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
-        const { key, code } = event;
+function onKeyDown({key}) {
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(key)) {
         const dy = (key === "ArrowDown") - (key === "ArrowUp");
         const dx = (key === "ArrowRight") - (key === "ArrowLeft");
         const wait = (key === " ");
@@ -406,10 +406,12 @@ function onKeyDown(event) {
 function showMessage(str) {
     const message = document.createElement("li");
     message.classList.add("message");
-    message.textContent = str;
+    message.textContent = str[0].toUpperCase() + str.substring(1);
     messages.insertBefore(message, messages.firstChild);
     message.scrollIntoView();
 }
+
+
 
 
 
